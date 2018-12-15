@@ -37,7 +37,7 @@ namespace AsyncDB
         }
         public async Task GetDBData()
         {
-            using (var sql = new SqlConnection("data source=dev-cyclid-terra-ussc-cat-sql-01.database.windows.net,1433;initial catalog=devterracycliddb;user id=devuser;password=VGVycmE@MTIz"))
+            using (var sql = new SqlConnection(""))
             {
                 sql.Open();
                 string query = "Insert into logs values('{\"log details\":\"ok\"}')";
