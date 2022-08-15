@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Data.SqlClient;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AsyncDB
@@ -9,50 +10,78 @@ namespace AsyncDB
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("async DB calls");
-            DBLayer db = new DBLayer();
-            db.Process();
-            Console.ReadLine();
-        }
-    }
+            long executionTime = 0;
 
-    class DBLayer
-    {
-        public void Process()
+            executionTime = Measure(SequentialDBCall);
+            Console.WriteLine(nameof(SequentialDBCall) + " " + executionTime);
+
+            executionTime = Measure(ParallelForDbCall);
+            Console.WriteLine(nameof(ParallelForDbCall) + " " + executionTime);
+
+            executionTime = Measure(TaskRunDbCall);
+            Console.WriteLine(nameof(TaskRunDbCall) + " " + executionTime);
+            
+            executionTime = Measure(ParallelThreadDbCall);
+            Console.WriteLine(nameof(ParallelThreadDbCall) + " " + executionTime);
+
+        }
+
+        private static void ParallelThreadDbCall()
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
+            List<Thread> threads = new List<Thread>();
             for (int i = 0; i < 100; i++)
             {
-                GetDBData().ContinueWith(c=> { Console.WriteLine("Time : " + sw.ElapsedMilliseconds); });
-                //GetDBData();
-                Console.WriteLine($"{i} call to db");
-                //for (int j = 0; j < 100; j++)
-                //{
-                //    Console.Write(j);
-                //}
-                
+                DBLayer dB = new DBLayer();
+
+                var thread = new Thread(() => dB.GetDataByName("Name - 100000"));
+                thread.Start();
+                threads.Add(thread);
             }
-            Console.WriteLine("Time : " + sw.ElapsedMilliseconds);
+            threads.ForEach(e => e.Join());
         }
-        public async Task GetDBData()
+
+        private static void TaskRunDbCall()
         {
-            using (var sql = new SqlConnection(""))
+            List<Task> tasks = new List<Task>();
+            for (int i = 0; i < 100; i++)
             {
-                sql.Open();
-                string query = "Insert into logs values('{\"log details\":\"ok\"}')";
-                SqlCommand cmd = new SqlCommand(query, sql);
-                var task = cmd.ExecuteReaderAsync();
-                await task;
-                var reader = task.GetAwaiter().GetResult();
-                int i = 0;
-                Console.WriteLine("Data fetched");
-                while (reader.Read())
+                tasks.Add(
+                Task.Run(() =>
                 {
-                    //Console.WriteLine("Value: " + reader.GetValue(0));
-                    i++;
-                }
+                    DBLayer dB = new DBLayer();
+                    var product = dB.GetDataByName("Name - 100000");
+                    Console.WriteLine(product.Id + product.Name);
+                }));
             }
+
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        private static void ParallelForDbCall()
+        {
+            Parallel.For(0, 500, number =>
+            {
+                DBLayer dB = new DBLayer();
+                var product = dB.GetDataByName("Name - 100000");
+                //Console.WriteLine(product.Id + product.Name);
+            });
+        }
+
+        private static void SequentialDBCall()
+        {
+            DBLayer dB = new DBLayer();
+            for (int i = 0; i < 10; i++)
+            {
+                var product = dB.GetDataByName("Name - 100000");
+                //Console.WriteLine(product.Id + product.Name);
+            }
+        }
+
+        public static long Measure(Action action)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            action();
+            return sw.ElapsedMilliseconds;
         }
     }
 }
