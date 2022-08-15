@@ -96,6 +96,33 @@ namespace AsyncDB
             }
         }
 
+        public async Task<Product> GetDataByNameAsync(string name)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            using (var sql = new SqlConnection("Data Source=(localdb)\\ProjectsV13;Initial Catalog=Inventory;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"))
+            {
+                sql.Open();
+                string query = "Select id, Name from Product where Name= @name";
+                SqlCommand cmd = new SqlCommand(query, sql);
+                cmd.Parameters.Add("@name", System.Data.SqlDbType.VarChar).Value = name;
+               // Console.WriteLine("started");
+                var reader = await cmd.ExecuteReaderAsync();
+               // Console.WriteLine("executing");
+                while (await reader.ReadAsync())
+                {
+                    var product = new Product()
+                    {
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1)
+                    };
+                    sw.Stop();
+                    // Console.WriteLine(sw.ElapsedMilliseconds);
+                    return product;
+                }
+                return new Product();
+            }
+        }
     }
 
     public class Product
