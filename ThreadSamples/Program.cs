@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.Metrics;
 using ThreadSamples;
+using ThreadSamples.Tasks;
 
 class Program
 {
@@ -47,13 +48,15 @@ class Program
         //new Thread(privateObject5.InstanceMethod_WithStaticResourceAccess_ThreadSafe).Start();
         //privateObject6.InstanceMethod_WithStaticResourceAccess_ThreadSafe();
 
-        var thread = new Thread(Call);
-        thread.Start();
-        Thread.Sleep(25);
-        Console.WriteLine("code while child thead is executing");
+        //var thread = new Thread(Call);
+        //thread.Start();
+        //Thread.Sleep(25);
+        //Console.WriteLine("code while child thead is executing");
 
-        thread.Join();
-        Console.WriteLine("Code after child thread is finised executed");
+        //thread.Join();
+        //Console.WriteLine("Code after child thread is finised executed");
+
+        new BasicTaskOperation().Run();
     }
 
     static void MethodY()
